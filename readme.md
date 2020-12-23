@@ -1,11 +1,11 @@
-#remotepyexecutor
+# remotepyexecutor
 ---
 
 "remotepyexecutor" is a python module to execute python source code on remote host with TCP connection.
 
 **CAUTION** There is no security measure to protecte the server side yet. Use at your own risk.
 
-##How to install
+## How to install
 
 clone this source.
 ```
@@ -14,9 +14,9 @@ cd $REMOTEPYEXECUTOR_SOURCE_ROOT
 python setup.py install
 ```
 
-##How to use
+## How to use
 
-Server side:
+### Server side:
 
 ```
 from remotepyexecutor import server
@@ -31,7 +31,7 @@ asyncio.run(rpeServ.startServe('localhost',8112))
 asyncio.run(rpeServ.stopServe())
 ```
 
-Client side
+### Client side
 
 ```
 from remotepyexecutor import client
