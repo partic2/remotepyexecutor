@@ -16,12 +16,14 @@ from . import encode
 gCtx={}
 
 
+
 class Session():
     def __init__(self,r:StreamReader,w:StreamWriter):
         self.r=r
         self.w=w
         self.sessionCtx={}
         self.sessionCtx['_G']=gCtx
+        self.sessionCtx['_session']=self
         self.lCtx={}
         self.running=False
     
@@ -73,9 +75,11 @@ class Server():
         self.server:asyncio.Server=None
         self.running=False
         self.runningSession:List[Session]=[]
+        self.stopFuture:asyncio.Future
     
     def sessionAdd(self,r:StreamReader,w:StreamWriter):
         s=Session(r,w)
+        s.attachedServer=self
         create_task(s.process())
         self.runningSession.append(s)
 
@@ -85,13 +89,22 @@ class Server():
         def fn(r,w):
             self.sessionAdd(r,w)
         self.server=await asyncio.start_server(fn,self.host,self.port)
+        self.stopFuture=asyncio.Future()
+        
+    async def startServeAndWait(self,host:str,port:int):
+        await self.startServe(host,port)
+        await self.waitForStop()
     
     async def stopServe(self):
         self.running=False
         for e in self.runningSession:
             await e.close()
         self.server.close()
-        
+        self.stopFuture.set_result(True)
+    
+    async def waitForStop(self):
+        if self.running:
+            await self.stopFuture
         
 
 

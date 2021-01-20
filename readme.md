@@ -16,20 +16,31 @@ python setup.py install
 
 ## How to use
 
-### Server side:
+### Server side (in coroutine):
 
 ```
 from remotepyexecutor import server
 import asyncio
 
 rpeServ=server.Server()
-asyncio.run(rpeServ.startServe('localhost',8112))
+await rpeServ.startServe('localhost',8112))
 
 # do something...
 
 #close server
-asyncio.run(rpeServ.stopServe())
+await rpeServ.stopServe()
 ```
+
+### Server side (blocked until server stopped):
+
+```
+from remotepyexecutor import server
+import asyncio
+
+serv=remotepyexecutor.server.Server()
+asyncio.run(serv.startServeAndWait('0.0.0.0','8105'))
+```
+
 
 ### Client side
 
@@ -47,4 +58,10 @@ async def rpe():
 asyncio.run(rpe())
 ```
 
+
+
+There are some special variable defined in execution environment:
+ "_G" to storage global variable cross session. 
+ "_session" to access Session on server 
+ 
 View source for more detail.
