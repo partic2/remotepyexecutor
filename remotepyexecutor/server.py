@@ -1,6 +1,6 @@
 
 import asyncio
-
+import asyncio.exceptions
 from asyncio.streams import StreamReader
 from asyncio.streams import StreamWriter
 from asyncio import create_task
@@ -16,7 +16,6 @@ from . import encode
 gCtx={}
 
 
-
 class Session():
     def __init__(self,r:StreamReader,w:StreamWriter):
         self.r=r
@@ -24,8 +23,8 @@ class Session():
         self.sessionCtx={}
         self.sessionCtx['_G']=gCtx
         self.sessionCtx['_session']=self
-        self.lCtx={}
         self.running=False
+    
     
     async def readSource(self)->str:
         bsource=await self.r.readuntil(b'\0')
@@ -36,29 +35,44 @@ class Session():
         self.w.write(content.encode(encode))
         self.w.write(b'\0')
 
+    async def doEval(self):
+        s=await self.readSource()
+        try:
+            r=eval(s,self.sessionCtx,None)
+            await self.writeStrPackage(repr(r))
+        except Exception as e:
+            await self.writeStrPackage(repr(e))
+    
+    async def doExec(self):
+        s=await self.readSource()
+        try:
+            exec(s,self.sessionCtx,None)
+            await self.writeStrPackage(repr(None))
+        except Exception as e:
+            await self.writeStrPackage(repr(e))
+            
+    async def doDisconnect(self):
+        self.running=False
+        await self.close()
+        
     async def process(self):
         self.running=True
-        while self.running:
-            packageType=(await self.r.readexactly(1))[0]
-            if packageType==common.PackageTypeEval :
-                s=await self.readSource()
-                try:
-                    r=eval(s,self.sessionCtx,self.lCtx)
-                    await self.writeStrPackage(repr(r))
-                except Exception as e:
-                    await self.writeStrPackage(repr(e))
-            elif packageType==common.PackageTypeExec :
-                s=await self.readSource()
-                try:
-                    exec(s,self.sessionCtx,self.lCtx)
-                    await self.writeStrPackage(repr(None))
-                except Exception as e:
-                    await self.writeStrPackage(repr(e))
-            elif packageType==common.PackageTypeDisconnect :
+        try:
+            while self.running:
+                packageType=(await self.r.readexactly(1))[0]
+
+                if packageType==common.PackageTypeEval :
+                    await self.doEval()
+                elif packageType==common.PackageTypeExec :
+                    await self.doExec()
+                elif packageType==common.PackageTypeDisconnect :
+                    await self.doDisconnect()
+                else :
+                    await self.writeStrPackage('None')
+        finally:
+            if self.running:
                 self.running=False
                 await self.close()
-            else :
-                await self.writeStrPackage('None')
         
 
     async def close(self):

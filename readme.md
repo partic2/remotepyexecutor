@@ -3,7 +3,7 @@
 
 "remotepyexecutor" is a python module to execute python source code on remote host with TCP connection.
 
-**CAUTION** There is no security measure to protecte the server side yet. Use at your own risk.
+**CAUTION** There is no security mechanism to verify the incoming connection yet. Use at your own risk.
 
 ## How to install
 
@@ -61,7 +61,7 @@ asyncio.run(rpe())
 
 
 There are some special variable defined in execution environment:
- "_G" to storage global variable cross session. 
+ "_G" to store global variable cross session. 
  "_session" to access Session on server 
  
 View source for more detail.
